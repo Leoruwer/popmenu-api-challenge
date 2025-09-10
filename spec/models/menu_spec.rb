@@ -28,4 +28,13 @@ RSpec.describe Menu, type: :model do
       expect(menu.menu_type).to eq("main-course")
     end
   end
+
+  describe "associations" do
+    it "destroys associated menu_items when deleted" do
+      menu = create(:menu)
+      create(:menu_item, menu: menu)
+
+      expect { menu.destroy }.to change(MenuItem, :count).by(-1)
+    end
+  end
 end
