@@ -1,6 +1,6 @@
 require "rails_helper"
 
-RSpec.describe "MenusController", type: :request do
+RSpec.describe "MenusRequest", type: :request do
   let!(:starter_menu) { create(:menu, name: "Starters", menu_type: "starter") }
   let!(:main_menu) { create(:menu, name: "Main Course", menu_type: "main-course") }
 
