@@ -1,5 +1,5 @@
 class MenuItem < ApplicationRecord
-  belongs_to :menu
+  has_and_belongs_to_many :menus
 
   enum :restriction_type, { no_restriction: 0, vegan: 1, lactose_free: 2, gluten_free: 3 }
 
