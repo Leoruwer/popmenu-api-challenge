@@ -3,5 +3,6 @@ FactoryBot.define do
     sequence(:name) { |n| "Menu #{n}" }
     description { "Sample menu description" }
     menu_type { "Starter" }
+    association :restaurant
   end
 end
