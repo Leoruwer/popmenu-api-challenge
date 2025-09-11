@@ -3,7 +3,7 @@ class MenuItem < ApplicationRecord
 
   enum :restriction_type, { no_restriction: 0, vegan: 1, lactose_free: 2, gluten_free: 3 }
 
-  validates :name, presence: true
+  validates :name, presence: true, uniqueness: true
   validates :price_in_cents, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
   def price

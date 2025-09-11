@@ -6,7 +6,7 @@ RSpec.describe MenuItem, type: :model do
   let(:restriction_type) { :no_restriction }
 
   let(:menu) { create(:menu) }
-  let(:menu_item) { build(:menu_item, menu: menu, name: name, price_in_cents: price_in_cents, restriction_type: restriction_type) }
+  let(:menu_item) { build(:menu_item, menus: [ menu ], name: name, price_in_cents: price_in_cents, restriction_type: restriction_type) }
 
   describe "validations" do
     it "is invalid without a name" do
@@ -23,7 +23,6 @@ RSpec.describe MenuItem, type: :model do
 
     it "is invalid with a negative price_in_cents" do
       menu_item.price_in_cents = -100
-
       expect(menu_item).not_to be_valid
     end
 
@@ -34,9 +33,7 @@ RSpec.describe MenuItem, type: :model do
     end
 
     it "raises an error with an invalid restriction_type" do
-      expect {
-        menu_item.restriction_type = :invalid
-      }.to raise_error(ArgumentError)
+      expect { menu_item.restriction_type = :invalid }.to raise_error(ArgumentError)
     end
 
     it "accepts valid restriction_type values" do
@@ -44,13 +41,20 @@ RSpec.describe MenuItem, type: :model do
 
       expect(menu_item).to be_valid
     end
+
+    it "validates uniqueness of name" do
+      create(:menu_item, menus: [ menu ], name: "Unique Name")
+      duplicate_item = build(:menu_item, menus: [ menu ], name: "Unique Name")
+
+      expect(duplicate_item).not_to be_valid
+    end
   end
 
   describe "scopes" do
-    let!(:item_none) { create(:menu_item, menu: menu, restriction_type: :no_restriction) }
-    let!(:item_vegan) { create(:menu_item, menu: menu, restriction_type: :vegan) }
-    let!(:item_lactose) { create(:menu_item, menu: menu, restriction_type: :lactose_free) }
-    let!(:item_gluten) { create(:menu_item, menu: menu, restriction_type: :gluten_free) }
+    let!(:item_none) { create(:menu_item, menus: [ menu ], restriction_type: :no_restriction) }
+    let!(:item_vegan) { create(:menu_item, menus: [ menu ], restriction_type: :vegan) }
+    let!(:item_lactose) { create(:menu_item, menus: [ menu ], restriction_type: :lactose_free) }
+    let!(:item_gluten) { create(:menu_item, menus: [ menu ], restriction_type: :gluten_free) }
 
     it "returns only vegan items" do
       expect(MenuItem.with_restrictions(:vegan)).to contain_exactly(item_vegan)
@@ -74,7 +78,7 @@ RSpec.describe MenuItem, type: :model do
   end
 
   describe "associations" do
-    it { should belong_to(:menu) }
+    it { should have_and_belong_to_many(:menus) }
   end
 
   describe "enums" do
@@ -83,7 +87,7 @@ RSpec.describe MenuItem, type: :model do
 
   describe "factories" do
     it "has a valid factory" do
-      expect(build(:menu_item)).to be_valid
+      expect(build(:menu_item, menus: [ menu ])).to be_valid
     end
   end
 
