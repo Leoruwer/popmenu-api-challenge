@@ -9,7 +9,7 @@ Rails.application.routes.draw do
   # root "posts#index"
 
   resources :restaurants, only: [ :index, :show ] do
-    resources :menus, only: [ :index, :show ] do
+    resources :menus, only: [ :show ] do
       resources :menu_items, only: [ :index, :show ]
     end
   end
