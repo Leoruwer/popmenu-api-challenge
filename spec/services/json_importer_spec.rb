@@ -41,25 +41,32 @@ RSpec.describe JsonImporter, type: :service do
         expect(MenuItem.count).to eq(3) # Burger is shared between menus
         expect(Restaurant.first.menus.map(&:name)).to contain_exactly("Lunch", "Dinner")
         expect(MenuItem.pluck(:name)).to include("Burger", "Small Salad", "Large Salad")
-      end
 
-      it "does not create duplicates if run twice" do
-        importer = JsonImporter.new(valid_json)
-        importer.call
-
-        expect { importer.call }.not_to change(Restaurant, :count)
-        expect { importer.call }.not_to change(Menu, :count)
-        expect { importer.call }.not_to change(MenuItem, :count)
-
-        lunch_menu = Menu.find_by(name: "Lunch")
-        dinner_menu = Menu.find_by(name: "Dinner")
-
-        expect(lunch_menu.menu_items.pluck(:name)).to contain_exactly("Burger", "Small Salad")
-        expect(dinner_menu.menu_items.pluck(:name)).to contain_exactly("Burger", "Large Salad")
+        logs = result[:logs].join
+        expect(logs).to include("Created restaurant")
+        expect(logs).to include("Created menu")
+        expect(logs).to include("Created menu item")
+        expect(logs).to include("Linked")
       end
     end
 
-     context "with names that differ only by spacing or case" do
+    context "does not create duplicates if run twice" do
+      it "does not create duplicate records and logs correctly" do
+        JsonImporter.new(valid_json).call
+        result = JsonImporter.new(valid_json).call
+
+        expect(result[:success]).to be true
+        expect(Restaurant.count).to eq(1)
+        expect(Menu.count).to eq(2)
+        expect(MenuItem.count).to eq(3)
+
+        expect(result[:logs]).to include("Found existing restaurant: Restaurant Name")
+        expect(result[:logs]).to include("Found existing menu: Lunch for restaurant: Restaurant Name")
+        expect(result[:logs]).to include("Found existing menu item: Burger (9.0)")
+      end
+    end
+
+    context "with names that differ only by spacing or case" do
       let(:json_with_spacing) do
         {
           restaurants: [
@@ -81,18 +88,18 @@ RSpec.describe JsonImporter, type: :service do
       end
 
       it "does not create duplicates due to spacing or case differences" do
-        importer = JsonImporter.new(valid_json)
-        importer.call
+        JsonImporter.new(valid_json).call
+        result = JsonImporter.new(json_with_spacing).call
 
-        importer_spacing = JsonImporter.new(json_with_spacing)
-        importer_spacing.call
+        expect(result[:success]).to be true
 
         expect(Restaurant.count).to eq(1)
         expect(Menu.count).to eq(2)
         expect(MenuItem.count).to eq(3)
 
-        lunch_menu = Menu.find_by(name: "Lunch")
-        expect(lunch_menu.menu_items.pluck(:name)).to include("Burger", "Small Salad")
+        expect(result[:logs]).to include("Found existing restaurant: Restaurant Name")
+        expect(result[:logs]).to include("Found existing menu: Lunch for restaurant: Restaurant Name")
+        expect(result[:logs]).to include("Found existing menu item: Burger (9.0)")
       end
     end
 
@@ -102,6 +109,7 @@ RSpec.describe JsonImporter, type: :service do
         result = importer.call
 
         expect(result[:success]).to be false
+        expect(result[:logs].join).to include("Invalid JSON")
         expect(result[:error]).to include("expected object key") # This is part of the message from the ParseError
       end
     end

@@ -1,6 +1,7 @@
 class JsonImporter
   def initialize(data)
     @data = data
+    @logs = []
   end
 
   def call
@@ -11,19 +12,19 @@ class JsonImporter
       import_restaurant(restaurant_data)
     end
 
-    { success: true, message: "Data imported successfully" }
+    { success: true, message: "Data imported successfully", logs: @logs }
   rescue JSON::ParserError => e
-    Rails.logger.error "Invalid JSON: #{e.message}"
+    log_error "Invalid JSON: #{e.message}"
 
-    { success: false, error: e.message }
+    { success: false, error: e.message, logs: @logs }
   rescue ActiveRecord::RecordInvalid => e
-    Rails.logger.error "Record invalid: #{e.message}"
+    log_error "Record invalid: #{e.message}"
 
-    { success: false, error: e.message }
+    { success: false, error: e.message, logs: @logs }
   rescue StandardError => e
-    Rails.logger.error "Unexpected error: #{e.message}"
+    log_error "Unexpected error: #{e.message}"
 
-    { success: false, error: e.message }
+    { success: false, error: e.message, logs: @logs }
   end
 
   private
@@ -37,9 +38,9 @@ class JsonImporter
     if restaurant.new_record?
       restaurant.save!
 
-      Rails.logger.info "Created restaurant: #{restaurant.name}"
+      log_info "Created restaurant: #{restaurant.name}"
     else
-      Rails.logger.info "Found existing restaurant: #{restaurant.name}"
+      log_info "Found existing restaurant: #{restaurant.name}"
     end
 
     menus = data["menus"] || []
@@ -71,9 +72,9 @@ class JsonImporter
     if menu.new_record?
       menu.save!
 
-      Rails.logger.info "Created menu: #{menu.name} for restaurant #{restaurant.name}"
+      log_info "Created menu: #{menu.name} for restaurant: #{restaurant.name}"
     else
-      Rails.logger.info "Found existing menu: #{menu.name} for restaurant #{restaurant.name}"
+      log_info "Found existing menu: #{menu.name} for restaurant: #{restaurant.name}"
     end
 
     items = data["menu_items"] || data["dishes"] || []
@@ -91,21 +92,31 @@ class JsonImporter
 
     if item.new_record?
       item.save!
-      Rails.logger.info "Created menu item: #{item.name} (#{item.price})"
+      log_info "Created menu item: #{item.name} (#{item.price})"
     else
-      Rails.logger.info "Found existing menu item: #{item.name} (#{item.price})"
+      log_info "Found existing menu item: #{item.name} (#{item.price})"
     end
 
     unless menu.menu_items.exists?(item.id)
       menu.menu_items << item
 
-      Rails.logger.info "Linked #{item.name} to menu #{menu.name}"
+      log_info "Linked #{item.name} to menu #{menu.name}"
     else
-      Rails.logger.info "Menu #{menu.name} already has item #{item.name}"
+      log_info "Menu #{menu.name} already has item #{item.name}"
     end
   end
 
   def normalize_name(name)
     name.downcase.gsub(/\s+/, "")
+  end
+
+  def log_info(message)
+    Rails.logger.info(message)
+    @logs << message
+  end
+
+  def log_error(message)
+    Rails.logger.error(message)
+    @logs << message
   end
 end
