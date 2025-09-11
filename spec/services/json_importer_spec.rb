@@ -70,7 +70,8 @@ RSpec.describe JsonImporter, type: :service do
                   name: "  lunch  ",
                   menu_items: [
                     { name: "Burger", price: 9.0 },
-                    { name: "small salad", price: 5.0 }
+                    { name: "small salad", price: 5.0 },
+                    { name: "smallsalad", price: 5.0 }
                   ]
                 }
               ]

@@ -30,9 +30,9 @@ class JsonImporter
 
   def import_restaurant(data)
     name = data["name"].to_s.strip
-    normalized_name = name.parameterize
+    normalized_name = normalize_name(name)
 
-    restaurant = Restaurant.all.detect { |r| r.name.to_s.parameterize == normalized_name } || Restaurant.find_or_initialize_by(name: name)
+    restaurant = Restaurant.all.detect { |r| normalize_name(r.name.to_s) == normalized_name } || Restaurant.find_or_initialize_by(name: name)
 
     if restaurant.new_record?
       restaurant.save!
@@ -51,13 +51,13 @@ class JsonImporter
 
   def import_menu(restaurant, data)
     menu_name = data["name"].to_s.strip
-    normalized_name = menu_name.parameterize
+    normalized_name = normalize_name(menu_name)
     menu_type = data["menu_type"].presence || menu_name
 
-    # We use parameterize for comparison only (not for storing in DB) to handle minor differences
+    # We use the normalize_name function for comparison only (not for storing in DB) to handle minor differences
     # in formatting, spacing, or capitalization. This prevents creating duplicate records for
     # menus or menu items that are essentially the same but formatted differently in the JSON
-    menu = restaurant.menus.detect { |m| m.name.to_s.parameterize == normalized_name } || restaurant.menus.find_or_initialize_by(name: menu_name)
+    menu = restaurant.menus.detect { |m| normalize_name(m.name.to_s) == normalized_name } || restaurant.menus.find_or_initialize_by(name: menu_name)
 
     # Set the menu_type to the provided value or fallback to the menu name.
     # The idea of menu_type is to categorize menus that are conceptually similar across different restaurants
@@ -85,9 +85,9 @@ class JsonImporter
 
   def import_menu_item(menu, data)
     name = data["name"].to_s.strip.gsub(/\\"/, '"')
-    normalized_name = name.parameterize
+    normalized_name = normalize_name(name)
 
-    item = MenuItem.all.detect { |i| i.name.to_s.parameterize == normalized_name } || MenuItem.find_or_initialize_by(name: name, price_in_cents: (BigDecimal(data["price"].to_s) * 100).to_i)
+    item = MenuItem.all.detect { |i| normalize_name(i.name.to_s) == normalized_name } || MenuItem.find_or_initialize_by(name: name, price_in_cents: (BigDecimal(data["price"].to_s) * 100).to_i)
 
     if item.new_record?
       item.save!
@@ -103,5 +103,9 @@ class JsonImporter
     else
       Rails.logger.info "Menu #{menu.name} already has item #{item.name}"
     end
+  end
+
+  def normalize_name(name)
+    name.downcase.gsub(/\s+/, "")
   end
 end
