@@ -1,11 +1,15 @@
 class ImportsController < ApplicationController
   def create
-    begin
-      data = JSON.parse(request.body.read)
+    data = request.body.read
+    importer = JsonImporter.new(data)
+    result = importer.call
 
-      render json: { received: data }, status: :ok
-    rescue JSON::ParserError => e
-      render json: { message: "Invalid JSON: #{e.message}" }, status: :unprocessable_content
+    if result[:success]
+      render json: { message: "Data imported successfully" }, status: :ok
+    else
+      Rails.logger.info "Import failed: #{result[:error]}"
+
+      render json: { message: result[:error] }, status: :unprocessable_content
     end
   end
 end
