@@ -24,24 +24,28 @@ RSpec.describe "ImportsRequest", type: :request do
 
   describe "POST /import" do
     context "with valid JSON" do
-      it "returns status ok and returns a JSON" do
+      it "imports the data successfully" do
         post "/import", params: valid_json, headers: { "CONTENT_TYPE" => "application/json" }
 
         json = JSON.parse(response.body)
 
         expect(response).to have_http_status(:ok)
-        expect(json["received"]["restaurants"].first["name"]).to eq("Restaurant Name")
+        expect(json["message"]).to eq("Data imported successfully")
+
+        expect(Restaurant.count).to eq(1)
+        expect(Menu.count).to eq(1)
+        expect(MenuItem.count).to eq(2)
       end
     end
 
     context "with invalid JSON" do
-      it "returns an error status" do
+      it "returns an error" do
         post "/import", params: invalid_json, headers: { "CONTENT_TYPE" => "application/json" }
 
         json = JSON.parse(response.body)
 
         expect(response).to have_http_status(:unprocessable_content)
-        expect(json["message"]).to include("Invalid JSON")
+        expect(json["message"]).to include("expected object key") # This is part of the message from the ParseError
       end
     end
   end
