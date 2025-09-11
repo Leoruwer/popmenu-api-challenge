@@ -30,11 +30,12 @@ RSpec.describe Menu, type: :model do
   end
 
   describe "associations" do
-    it "destroys associated menu_items when deleted" do
+    it "removes associations in join table when deleted" do
       menu = create(:menu)
-      create(:menu_item, menu: menu)
+      menu_item = create(:menu_item)
+      menu_item.menus << menu
 
-      expect { menu.destroy }.to change(MenuItem, :count).by(-1)
+      expect { menu.destroy }.to change { menu_item.menus.count }.by(-1)
     end
   end
 end
