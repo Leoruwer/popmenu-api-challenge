@@ -5,7 +5,7 @@ class ImportsController < ApplicationController
     result = importer.call
 
     if result[:success]
-      render json: { message: "Data imported successfully" }, status: :ok
+      render json: { message: "Data imported successfully", logs: result[:logs] }, status: :ok
     else
       Rails.logger.info "Import failed: #{result[:error]}"
 

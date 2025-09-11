@@ -24,13 +24,21 @@ RSpec.describe "ImportsRequest", type: :request do
 
   describe "POST /import" do
     context "with valid JSON" do
-      it "imports the data successfully" do
+      it "imports the data successfully and returns logs" do
         post "/import", params: valid_json, headers: { "CONTENT_TYPE" => "application/json" }
 
         json = JSON.parse(response.body)
+        logs = json["logs"]
 
         expect(response).to have_http_status(:ok)
         expect(json["message"]).to eq("Data imported successfully")
+
+        expect(logs).to include("Created restaurant: Restaurant Name")
+        expect(logs).to include("Created menu: lunch for restaurant: Restaurant Name")
+        expect(logs).to include("Created menu item: Burger (9.0)")
+        expect(logs).to include("Linked Burger to menu lunch")
+        expect(logs).to include("Created menu item: Small Salad (5.0)")
+        expect(logs).to include("Linked Small Salad to menu lunch")
 
         expect(Restaurant.count).to eq(1)
         expect(Menu.count).to eq(1)
