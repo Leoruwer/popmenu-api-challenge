@@ -13,4 +13,6 @@ Rails.application.routes.draw do
       resources :menu_items, only: [ :index, :show ]
     end
   end
+
+  post "/import", to: "imports#create"
 end
