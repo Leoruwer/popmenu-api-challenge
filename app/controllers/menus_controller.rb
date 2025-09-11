@@ -1,13 +1,15 @@
 class MenusController < ApplicationController
-  def index
-    menus = Menu.includes(:menu_items).order(:menu_type, :updated_at)
-
-    render json: menus.as_json(include: { menu_items: { methods: :price } })
-  end
+  before_action :set_restaurant
 
   def show
     menu = Menu.find(params[:id])
 
     render json: menu.as_json(include: { menu_items: { methods: :price } })
+  end
+
+  private
+
+  def set_restaurant
+    @restaurant = Restaurant.find(params[:restaurant_id])
   end
 end

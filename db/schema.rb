@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_10_221637) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_11_001710) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -18,10 +18,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_10_221637) do
     t.string "name", null: false
     t.integer "price_in_cents", null: false
     t.integer "restriction_type", default: 0, null: false
-    t.bigint "menu_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["menu_id"], name: "index_menu_items_on_menu_id"
+    t.index ["name"], name: "index_menu_items_on_name", unique: true
+  end
+
+  create_table "menu_items_menus", id: false, force: :cascade do |t|
+    t.bigint "menu_id", null: false
+    t.bigint "menu_item_id", null: false
+    t.index ["menu_id", "menu_item_id"], name: "index_menu_items_menus_on_menu_id_and_menu_item_id", unique: true
   end
 
   create_table "menus", force: :cascade do |t|
@@ -30,7 +35,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_10_221637) do
     t.string "menu_type", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "restaurant_id", null: false
+    t.index ["restaurant_id"], name: "index_menus_on_restaurant_id"
   end
 
-  add_foreign_key "menu_items", "menus"
+  create_table "restaurants", force: :cascade do |t|
+    t.string "name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_restaurants_on_name", unique: true
+  end
+
+  add_foreign_key "menus", "restaurants"
 end
